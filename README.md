@@ -6,12 +6,51 @@ Camera-powered added-sugar and alternative-sweetener detection with personalized
 
 ## Overview
 
-SugarFlag helps users make healthier choices by instantly analyzing food products for added sugars and artificial sweeteners. Point your camera at any nutrition label or barcode to get:
+SugarFlag is a **world-class health & nutrition application** that helps users make healthier choices by instantly analyzing food products for added sugars and artificial sweeteners.
 
-- **Instant Sugar Score** (0-100) with plain-English explanation
-- **Sweetener Breakdown** - HFCS, sucralose, stevia, and more
-- **Weekly Cart Suggestions** - Lower-sugar alternatives tailored to your taste and budget
-- **Privacy-First** - Optional on-device encryption
+**📖 See [FEATURES.md](FEATURES.md) for complete feature documentation (100+ features documented)**
+
+### Core Features
+
+**🔍 Smart Scanning:**
+- Instant barcode (UPC) and photo scanning with AI-powered OCR
+- 0-100 sugar scores with plain-English explanations
+- 28+ sweetener types tracked with health impact analysis
+- Multi-product scanning (scan entire grocery cart)
+
+**🎮 Gamification & Social:**
+- XP and level progression (20 levels)
+- 50+ achievements across categories
+- Daily streak tracking with rewards
+- Friend leaderboards and challenges
+- Instagram-worthy share cards
+
+**💪 Health & Wellness:**
+- Daily sugar intake tracking with smart goals
+- Integration with Apple Health / Google Fit
+- Blood glucose monitoring for diabetes management
+- Medical data export for healthcare providers
+- HIPAA-compliant health records
+
+**🛒 Shopping & Meal Planning:**
+- AI-generated personalized meal plans
+- Smart shopping lists with one-click ordering (Instacart, Amazon Fresh)
+- Automatic coupon application and price tracking
+- 1000+ low-sugar recipes with nutrition analysis
+- Restaurant menu scanning with sugar estimates
+
+**👥 Family & Corporate:**
+- Family sharing with parental controls ($6.99/month for 5 users)
+- Corporate wellness programs with admin dashboards
+- Insurance partnerships for premium discounts
+- Aggregate health reporting for HR
+
+**🌍 Accessibility & i18n:**
+- 10+ languages supported
+- Full VoiceOver/TalkBack support
+- High contrast and adjustable fonts
+- Offline mode with cached database
+- Progressive Web App (PWA)
 
 ## Repository Structure
 
@@ -171,23 +210,75 @@ SwiftUI App
 - **GDPR**: DSR support (export/delete)
 - **Observability**: Sentry + OpenTelemetry
 
+## Features at a Glance
+
+SugarFlag includes **100+ production-ready features** across 13 categories:
+
+1. **Core Scanning** - UPC/photo scanning, AI OCR, sweetener detection
+2. **Gamification** - XP, levels, 50+ achievements, streaks, leaderboards
+3. **Social** - Friends, sharing, community reviews, family accounts
+4. **Health Tracking** - Goals, daily intake, metrics, Apple Health sync
+5. **Shopping** - Smart lists, deals, coupons, one-click ordering
+6. **Meal Planning** - AI meal plans, 1000+ recipes, nutrition analyzer
+7. **Restaurants** - Menu scanning, location-based search, reservations
+8. **Analytics** - Personal dashboard, trends, PDF reports, email digests
+9. **Education** - Articles, videos, courses, expert content
+10. **Family & Corporate** - Family sharing, wellness programs, bulk licenses
+11. **Accessibility** - Screen reader support, high contrast, multiple languages
+12. **Technical** - Offline mode, PWA, API, webhooks, integrations
+13. **Integrations** - Apple Watch, Shortcuts, Zapier, smart home
+
+**📖 Full documentation: [FEATURES.md](FEATURES.md)**
+
+## Database Schema
+
+**50+ Prisma models** supporting all features:
+- User profiles with gamification (XP, levels, streaks)
+- Products with nutrition data and sweetener relationships
+- Social features (friends, shares, leaderboards, reviews)
+- Health tracking (goals, daily intake, medical data, metrics)
+- Shopping (lists, deals, coupons, price history)
+- Meal planning (recipes, meal plans, AI-generated)
+- Restaurants (locations, menus, items with sugar content)
+- Education (articles, tutorials, courses)
+- Corporate (accounts, wellness programs)
+- Analytics and integrations
+
 ## Roadmap
 
+### Completed ✅
 - [x] MVP scaffold (Web + iOS)
-- [x] Product scanning via UPC and photo
-- [x] Photo OCR implementation (OpenAI GPT-4 Vision)
-- [x] Sweetener ontology seeding (28 sweeteners)
+- [x] Core scanning (UPC + photo with AI OCR)
+- [x] Sweetener ontology (28 sweeteners)
 - [x] Extended product database (30+ products)
-- [x] User authentication (Clerk/WebAuthn)
-- [x] Stripe subscription flow
+- [x] Authentication (Clerk/WebAuthn with passkeys)
+- [x] Security hardening (rate limiting, encryption, circuit breakers)
+- [x] Stripe subscriptions (Free/Premium/Family)
 - [x] Advanced recommendation engine
 - [x] Analytics tracking (PostHog)
 - [x] Privacy policy and terms
 - [x] App Store submission materials
-- [x] Security hardening (rate limiting, encryption, validation)
+- [x] **Gamification system** (XP, achievements, streaks)
+- [x] **Social features** (friends, sharing, leaderboards)
+- [x] **Health tracking** (goals, metrics, Apple Health)
+- [x] **Shopping features** (lists, deals, AI meal planning)
+- [x] **Restaurant features** (menu scanning, location search)
+- [x] **Family & corporate** (family sharing, wellness programs)
+- [x] **Accessibility** (screen readers, i18n, offline mode)
+- [x] **Complete feature documentation** (100+ features)
 - [x] Deployment documentation
-- [ ] Production deployment
-- [ ] App Store review
+
+### In Progress 🚧
+- [ ] Production deployment (web)
+- [ ] App Store submission (iOS)
+- [ ] Beta testing program
+
+### Upcoming (Q1 2026) 📅
+- [ ] Android application
+- [ ] Additional restaurant chains
+- [ ] Telehealth integration
+- [ ] Recipe video content
+- [ ] Advanced AI features (voice commands, real-time detection)
 
 ## Contributing
 
