@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { circuitBreakers, retryWithBackoff } from './retry'
 
 const OFF_API_BASE = 'https://world.openfoodfacts.org/api/v2'
 
@@ -33,14 +34,22 @@ export async function lookupProductByUPC(
   upc: string
 ): Promise<OpenFoodFactsProduct | null> {
   try {
-    const response = await axios.get<OpenFoodFactsResponse>(
-      `${OFF_API_BASE}/product/${upc}`,
-      {
-        headers: {
-          'User-Agent': 'SugarFlag - nutrition analysis app',
-        },
-        timeout: 10000,
-      }
+    const response = await circuitBreakers.openfoodfacts.execute(() =>
+      retryWithBackoff(
+        () => axios.get<OpenFoodFactsResponse>(
+          `${OFF_API_BASE}/product/${upc}`,
+          {
+            headers: {
+              'User-Agent': 'SugarFlag - nutrition analysis app',
+            },
+            timeout: 10000,
+          }
+        ),
+        {
+          maxRetries: 2,
+          initialDelay: 1000,
+        }
+      )
     )
 
     if (response.data.status === 1 && response.data.product) {
@@ -68,7 +77,9 @@ export async function searchProducts(
   pageSize: number = 20
 ): Promise<OpenFoodFactsProduct[]> {
   try {
-    const response = await axios.get(`${OFF_API_BASE}/search`, {
+    const response = await circuitBreakers.openfoodfacts.execute(() =>
+      retryWithBackoff(
+        () => axios.get(`${OFF_API_BASE}/search`, {
       params: {
         search_terms: query,
         page,
@@ -80,7 +91,13 @@ export async function searchProducts(
         'User-Agent': 'SugarFlag - nutrition analysis app',
       },
       timeout: 10000,
-    })
+        }),
+        {
+          maxRetries: 2,
+          initialDelay: 1000,
+        }
+      )
+    )
 
     return response.data.products || []
   } catch (error) {

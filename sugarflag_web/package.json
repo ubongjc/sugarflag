@@ -44,7 +44,9 @@
     "posthog-js": "^1.190.0",
     "posthog-node": "^4.3.0",
     "@radix-ui/react-dialog": "^1.1.2",
-    "@radix-ui/react-tabs": "^1.1.1"
+    "@radix-ui/react-tabs": "^1.1.1",
+    "@radix-ui/react-toast": "^1.2.2",
+    "lru-cache": "^11.0.2"
   },
   "devDependencies": {
     "@types/node": "^22",

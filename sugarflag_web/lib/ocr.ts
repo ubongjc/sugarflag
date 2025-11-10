@@ -1,7 +1,8 @@
 import OpenAI from 'openai'
+import { circuitBreakers, retryWithBackoff } from './retry'
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-development',
 })
 
 export interface NutritionInfo {
@@ -29,8 +30,15 @@ export interface OCRResult {
 export async function extractNutritionFromImage(
   imageBase64: string
 ): Promise<OCRResult> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured')
+  }
+
   try {
-    const response = await openai.chat.completions.create({
+    // Use circuit breaker and retry logic for resilience
+    const response = await circuitBreakers.openai.execute(() =>
+      retryWithBackoff(
+        () => openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -87,7 +95,13 @@ If a field cannot be determined, omit it from the response. Confidence should be
       ],
       max_tokens: 1000,
       response_format: { type: 'json_object' },
-    })
+        }),
+        {
+          maxRetries: 2,
+          initialDelay: 2000,
+        }
+      )
+    )
 
     const content = response.choices[0].message.content
     if (!content) {
@@ -116,8 +130,14 @@ If a field cannot be determined, omit it from the response. Confidence should be
 export async function extractIngredientsFromImage(
   imageBase64: string
 ): Promise<string> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI API key not configured')
+  }
+
   try {
-    const response = await openai.chat.completions.create({
+    const response = await circuitBreakers.openai.execute(() =>
+      retryWithBackoff(
+        () => openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -142,7 +162,13 @@ export async function extractIngredientsFromImage(
         },
       ],
       max_tokens: 500,
-    })
+        }),
+        {
+          maxRetries: 2,
+          initialDelay: 2000,
+        }
+      )
+    )
 
     const content = response.choices[0].message.content
     if (!content) {

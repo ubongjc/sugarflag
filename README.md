@@ -1,6 +1,8 @@
-# SugarFlag
+# 🍭 SugarFlag - Know Your Sugar, Choose Better
 
-Camera → instant added-sugar/alternative-sweetener score with plain-English labels; weekly lower-sugar cart personalized to taste and budget.
+**Industry-standard, production-ready health & nutrition application**
+
+Camera-powered added-sugar and alternative-sweetener detection with personalized lower-sugar alternatives. Built with Next.js 15, SwiftUI, and modern security best practices.
 
 ## Overview
 
@@ -172,22 +174,53 @@ SwiftUI App
 ## Roadmap
 
 - [x] MVP scaffold (Web + iOS)
-- [x] Product scanning via UPC
-- [ ] Photo OCR implementation
-- [ ] Sweetener ontology seeding
-- [ ] User preferences UI
-- [ ] Grocery API integrations
-- [ ] Stripe subscription flow
-- [ ] App Store submission
-- [ ] Analytics dashboard
+- [x] Product scanning via UPC and photo
+- [x] Photo OCR implementation (OpenAI GPT-4 Vision)
+- [x] Sweetener ontology seeding (28 sweeteners)
+- [x] Extended product database (30+ products)
+- [x] User authentication (Clerk/WebAuthn)
+- [x] Stripe subscription flow
+- [x] Advanced recommendation engine
+- [x] Analytics tracking (PostHog)
+- [x] Privacy policy and terms
+- [x] App Store submission materials
+- [x] Security hardening (rate limiting, encryption, validation)
+- [x] Deployment documentation
+- [ ] Production deployment
+- [ ] App Store review
 
 ## Contributing
 
 This is a private repository. Contact the maintainers for access.
 
+## 🔒 Security Features
+
+### Web Application
+✅ Clerk authentication with passkeys
+✅ Rate limiting (LRU cache)
+✅ Security headers (CSP, HSTS, X-Frame-Options)
+✅ Input validation (Zod schemas)
+✅ Circuit breakers for external APIs
+✅ Exponential backoff retry logic
+✅ Client-side photo encryption (AES-GCM-256)
+✅ Webhook signature verification (Stripe)
+
+### iOS Application
+✅ WebAuthn/Passkey authentication
+✅ AES-GCM-256 client-side encryption
+✅ Keychain secure storage
+✅ Face ID/Touch ID support
+✅ StoreKit 2 receipt validation
+
+## 📚 Documentation
+
+- **Deployment Guide**: [DEPLOYMENT.md](DEPLOYMENT.md) - Comprehensive 500+ line production deployment guide
+- **App Store Submission**: `sugarflag_ios/AppStore/SUBMISSION.md` - Complete iOS submission guide
+- **API Documentation**: See `sugarflag_web/app/api/` for endpoint details
+
 ## License
 
-Proprietary - All rights reserved
+MIT License
 
 ## Support
 
