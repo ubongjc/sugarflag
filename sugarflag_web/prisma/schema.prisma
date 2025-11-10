@@ -1,0 +1,888 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profile
+  firstName String?
+  lastName  String?
+  avatarUrl String?
+  bio       String?
+
+  // Gamification
+  xp            Int     @default(0)
+  level         Int     @default(1)
+  currentStreak Int     @default(0)
+  longestStreak Int     @default(0)
+  lastScanDate  DateTime?
+
+  // Premium status
+  isPremium      Boolean  @default(false)
+  premiumUntil   DateTime?
+  subscriptionId String?
+
+  // Relations
+  scans              Scan[]
+  preferences        Preference?
+  carts              CartSuggestion[]
+  feedback           Feedback[]
+  goals              UserGoal[]
+  dailyIntake        DailyIntake[]
+  healthMetrics      HealthMetric[]
+  achievements       UserAchievement[]
+  friendsInitiated   Friend[]         @relation("FriendInitiated")
+  friendsReceived    Friend[]         @relation("FriendReceived")
+  shares             Share[]
+  leaderboardEntries LeaderboardEntry[]
+  shoppingLists      ShoppingList[]
+  recipes            Recipe[]
+  mealPlans          MealPlan[]
+  medicalData        MedicalData[]
+  notifications      Notification[]
+  settings           UserSettings?
+  reviews            ProductReview[]
+  familyMembers      FamilyMember[]   @relation("FamilyOwner")
+  familyMemberOf     FamilyMember[]   @relation("FamilyChild")
+  corporateAccount   CorporateAccount? @relation("CorporateEmployee")
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([xp])
+  @@index([level])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  upc         String   @unique
+  brand       String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Nutrients (per serving)
+  servingSize      String?
+  calories         Float?
+  totalSugars      Float? // grams
+  addedSugars      Float? // grams
+  totalCarbs       Float? // grams
+  protein          Float? // grams
+  fat              Float? // grams
+  sodium           Float? // mg
+  fiber            Float? // grams
+
+  // Ingredients
+  ingredients      String? // comma-separated or JSON
+  ingredientsVector Unsupported("vector(1536)")? // pgvector for embeddings
+
+  // Relations
+  scans       Scan[]
+  aliases     AliasUPC[]
+  sweeteners  ProductSweetener[]
+
+  @@index([upc])
+  @@index([brand])
+}
+
+model Sweetener {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        String   // "added_sugar" | "artificial" | "natural_alternative"
+  aliases     String[] // e.g., ["HFCS", "High Fructose Corn Syrup"]
+  description String?
+  healthScore Int      @default(50) // 0-100, lower = worse
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products ProductSweetener[]
+
+  @@index([type])
+}
+
+model ProductSweetener {
+  id          String   @id @default(cuid())
+  productId   String
+  sweetenerId String
+  position    Int      // position in ingredient list (1-indexed)
+  amount      String?  // if quantifiable
+  createdAt   DateTime @default(now())
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sweetener Sweetener @relation(fields: [sweetenerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, sweetenerId])
+  @@index([productId])
+}
+
+model Scan {
+  id             String   @id @default(cuid())
+  userId         String
+  productId      String?
+  score          Int      // 0-100, higher = better (lower sugar)
+  scanType       String   // "upc" | "photo" | "manual"
+  photoUrl       String?  // encrypted photo if enabled
+  encrypted      Boolean  @default(false)
+  locale         String?  @default("en-US")
+  rationale      String?  // plain-English explanation
+  uncertainty    Float?   // 0-1, confidence level
+  createdAt      DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  feedback Feedback[]
+
+  @@index([userId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
+model Preference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  dislikes          String[] // ingredient/sweetener names to avoid
+  budgetMax         Float?   // weekly grocery budget limit
+  culturalCuisines  String[] // preferred cuisines
+  dietaryRestrictions String[] // "vegan", "gluten-free", etc.
+  tasteProfile      Json?    // structured taste data from feedback
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CartSuggestion {
+  id           String   @id @default(cuid())
+  userId       String
+  weekOf       DateTime // week start date
+  items        Json     // array of {productId, quantity, reason}
+  estSavings   Float?   // estimated sugar savings in grams
+  totalCost    Float?
+  generatedAt  DateTime @default(now())
+  status       String   @default("active") // "active" | "archived"
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([weekOf])
+}
+
+model VendorIntegration {
+  id        String   @id @default(cuid())
+  retailer  String   @unique
+  status    String   @default("inactive") // "active" | "inactive" | "pending"
+  authData  String?  // encrypted auth tokens
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  scanId    String
+  thumbsUp  Boolean
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scanId])
+}
+
+model AliasUPC {
+  id           String   @id @default(cuid())
+  upc          String   @unique
+  canonicalId  String
+  reason       String?  // why this is an alias
+  createdAt    DateTime @default(now())
+
+  canonical Product @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
+
+  @@index([upc])
+  @@index([canonicalId])
+}
+
+model OntologyVersion {
+  id          String   @id @default(cuid())
+  version     String   @unique
+  changelog   String
+  publishedAt DateTime @default(now())
+  active      Boolean  @default(false)
+
+  @@index([active])
+}
+
+// ============================================
+// GAMIFICATION & ENGAGEMENT
+// ============================================
+
+model Achievement {
+  id          String   @id @default(cuid())
+  key         String   @unique  // "first_scan", "streak_7", "sugar_warrior"
+  name        String
+  description String
+  category    String   // "scanning", "health", "social", "milestone"
+  iconUrl     String?
+  xpReward    Int      @default(0)
+  tier        String   @default("bronze") // bronze, silver, gold, platinum
+  requirement Json     // {type: "scan_count", value: 100}
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+
+  @@index([category])
+  @@index([tier])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  progress      Int      @default(0) // for progressive achievements
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Streak {
+  id           String   @id @default(cuid())
+  userId       String
+  startDate    DateTime
+  endDate      DateTime?
+  daysCount    Int      @default(1)
+  isActive     Boolean  @default(true)
+  streakType   String   @default("daily_scan") // daily_scan, weekly_goal, etc
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+// ============================================
+// SOCIAL FEATURES
+// ============================================
+
+model Friend {
+  id         String   @id @default(cuid())
+  userId     String   // initiator
+  friendId   String   // receiver
+  status     String   @default("pending") // pending, accepted, blocked
+  createdAt  DateTime @default(now())
+  acceptedAt DateTime?
+
+  user   User @relation("FriendInitiated", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendReceived", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@index([status])
+}
+
+model Share {
+  id        String   @id @default(cuid())
+  userId    String
+  scanId    String?
+  type      String   // "scan", "achievement", "streak", "goal"
+  platform  String?  // "instagram", "twitter", "facebook", "whatsapp"
+  imageUrl  String?  // generated share card
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model Leaderboard {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "global", "friends", "company"
+  period      String   // "daily", "weekly", "monthly", "all_time"
+  metric      String   // "lowest_sugar", "most_scans", "highest_xp"
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  entries LeaderboardEntry[]
+
+  @@index([type])
+  @@index([period])
+  @@index([isActive])
+}
+
+model LeaderboardEntry {
+  id            String   @id @default(cuid())
+  leaderboardId String
+  userId        String
+  rank          Int
+  score         Float
+  createdAt     DateTime @default(now())
+
+  leaderboard Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leaderboardId, userId])
+  @@index([leaderboardId, rank])
+}
+
+model ProductReview {
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  rating     Int      // 1-5
+  comment    String?
+  helpful    Int      @default(0)
+  verified   Boolean  @default(false) // verified purchase
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([rating])
+}
+
+// ============================================
+// HEALTH TRACKING & GOALS
+// ============================================
+
+model UserGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "daily_sugar", "weight_loss", "diabetes_mgmt"
+  target      Float    // target value (e.g., 25g sugar/day)
+  unit        String   // "grams", "calories", "pounds"
+  startDate   DateTime
+  targetDate  DateTime?
+  isActive    Boolean  @default(true)
+  progress    Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([type])
+}
+
+model DailyIntake {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime @db.Date
+  totalSugar     Float    @default(0)
+  addedSugar     Float    @default(0)
+  calories       Float    @default(0)
+  carbs          Float    @default(0)
+  protein        Float    @default(0)
+  fat            Float    @default(0)
+  scansCount     Int      @default(0)
+  goalMet        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model HealthMetric {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "weight", "glucose", "blood_pressure", "a1c"
+  value     Float
+  unit      String
+  notes     String?
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+model MedicalData {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "glucose_reading", "medication", "doctor_visit"
+  data        Json     // flexible medical data
+  timestamp   DateTime @default(now())
+  isEncrypted Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+// ============================================
+// SHOPPING & E-COMMERCE
+// ============================================
+
+model ShoppingList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  notes     String?
+  status    String   @default("active") // active, completed, archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ShoppingListItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ShoppingListItem {
+  id             String   @id @default(cuid())
+  listId         String
+  productId      String?
+  customName     String?
+  quantity       Int      @default(1)
+  isChecked      Boolean  @default(false)
+  estimatedPrice Float?
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  list ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
+}
+
+model Deal {
+  id          String   @id @default(cuid())
+  productId   String
+  retailer    String   // "amazon", "walmart", "target"
+  dealType    String   // "discount", "coupon", "cashback"
+  value       Float    // discount amount or percentage
+  code        String?  // coupon code
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  description String?
+  url         String?
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([isActive])
+  @@index([endDate])
+}
+
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String
+  discount    Float    // percentage or fixed amount
+  discountType String  @default("percentage") // percentage, fixed
+  minPurchase Float?
+  maxDiscount Float?
+  usageLimit  Int?
+  usageCount  Int      @default(0)
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  productId String
+  retailer  String
+  price     Float
+  currency  String   @default("USD")
+  timestamp DateTime @default(now())
+
+  @@index([productId])
+  @@index([timestamp])
+}
+
+// ============================================
+// RECIPES & MEAL PLANNING
+// ============================================
+
+model Recipe {
+  id           String   @id @default(cuid())
+  userId       String?
+  name         String
+  description  String?
+  imageUrl     String?
+  prepTime     Int?     // minutes
+  cookTime     Int?     // minutes
+  servings     Int      @default(1)
+  difficulty   String?  // easy, medium, hard
+  cuisine      String?
+  ingredients  Json     // array of {name, amount, unit}
+  instructions Json     // array of steps
+  nutrition    Json?    // calculated nutrition per serving
+  sugarScore   Int?     // calculated sugar score
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  mealPlans MealPlan[]
+
+  @@index([userId])
+  @@index([isPublic])
+  @@index([sugarScore])
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  meals     Json     // array of {day, mealType, recipeId}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipes Recipe[]
+
+  @@index([userId])
+  @@index([startDate])
+}
+
+// ============================================
+// RESTAURANTS & DINING OUT
+// ============================================
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String   @default("US")
+  latitude    Float?
+  longitude   Float?
+  phone       String?
+  website     String?
+  cuisine     String?
+  rating      Float?
+  sugarRating Float?   // how sugar-friendly (0-5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menus RestaurantMenu[]
+
+  @@index([city, state])
+  @@index([latitude, longitude])
+  @@index([sugarRating])
+}
+
+model RestaurantMenu {
+  id           String   @id @default(cuid())
+  restaurantId String
+  name         String   // "Dinner Menu", "Breakfast Menu"
+  effectiveDate DateTime?
+  createdAt    DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  menuId      String
+  name        String
+  description String?
+  category    String?  // appetizer, entree, dessert, beverage
+  price       Float?
+  calories    Float?
+  totalSugar  Float?
+  addedSugar  Float?
+  sugarScore  Int?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  menu RestaurantMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@index([menuId])
+  @@index([sugarScore])
+}
+
+// ============================================
+// EDUCATION & CONTENT
+// ============================================
+
+model EducationalContent {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  type        String   // "article", "video", "infographic", "course"
+  category    String   // "sugar_basics", "diabetes", "weight_loss"
+  content     String   // markdown or HTML
+  summary     String?
+  imageUrl    String?
+  videoUrl    String?
+  author      String?
+  readTime    Int?     // minutes
+  difficulty  String?  // beginner, intermediate, advanced
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([type])
+  @@index([category])
+  @@index([isPublished])
+}
+
+model Tutorial {
+  id          String   @id @default(cuid())
+  key         String   @unique // "first_scan", "onboarding"
+  name        String
+  description String
+  steps       Json     // array of tutorial steps
+  isRequired  Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([isRequired])
+  @@index([order])
+}
+
+// ============================================
+// FAMILY & CORPORATE
+// ============================================
+
+model FamilyMember {
+  id          String   @id @default(cuid())
+  ownerId     String
+  memberId    String
+  relationship String  // "child", "spouse", "parent"
+  permissions Json     // what owner can see/do
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  owner  User @relation("FamilyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("FamilyChild", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, memberId])
+  @@index([ownerId])
+  @@index([memberId])
+}
+
+model CorporateAccount {
+  id          String   @id @default(cuid())
+  companyName String
+  adminUserId String   @unique
+  licenseCount Int     @default(0)
+  usedLicenses Int     @default(0)
+  plan        String   // "wellness", "enterprise"
+  isActive    Boolean  @default(true)
+  features    Json?    // enabled features
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+
+  admin    User               @relation("CorporateEmployee", fields: [adminUserId], references: [id], onDelete: Cascade)
+  programs WellnessProgram[]
+
+  @@index([adminUserId])
+  @@index([isActive])
+}
+
+model WellnessProgram {
+  id                String   @id @default(cuid())
+  corporateAccountId String
+  name              String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime?
+  goals             Json     // program goals
+  rewards           Json?    // reward structure
+  participants      Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  corporateAccount CorporateAccount @relation(fields: [corporateAccountId], references: [id], onDelete: Cascade)
+
+  @@index([corporateAccountId])
+  @@index([isActive])
+}
+
+// ============================================
+// NOTIFICATIONS & SETTINGS
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "goal_achieved", "streak_reminder", "friend_request"
+  title     String
+  message   String
+  data      Json?    // additional context
+  isRead    Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Notification preferences
+  emailNotifications    Boolean @default(true)
+  pushNotifications     Boolean @default(true)
+  smsNotifications      Boolean @default(false)
+  weeklyDigest          Boolean @default(true)
+  goalReminders         Boolean @default(true)
+  friendActivity        Boolean @default(true)
+  productAlerts         Boolean @default(true)
+
+  // Privacy
+  profilePublic         Boolean @default(false)
+  shareScans            Boolean @default(true)
+  shareAchievements     Boolean @default(true)
+
+  // Accessibility
+  highContrast          Boolean @default(false)
+  fontSize              String  @default("medium") // small, medium, large
+  voiceoverEnabled      Boolean @default(false)
+  hapticFeedback        Boolean @default(true)
+
+  // Preferences
+  measurementSystem     String  @default("imperial") // imperial, metric
+  language              String  @default("en")
+  currency              String  @default("USD")
+  timezone              String  @default("America/New_York")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================
+// ANALYTICS & TRACKING
+// ============================================
+
+model AppAnalytics {
+  id        String   @id @default(cuid())
+  userId    String?
+  event     String   // "scan_completed", "goal_achieved", etc
+  data      Json?    // event-specific data
+  platform  String   // "web", "ios", "android"
+  version   String?  // app version
+  timestamp DateTime @default(now())
+
+  @@index([event])
+  @@index([timestamp])
+  @@index([userId])
+}
+
+model ProductPopularity {
+  id          String   @id @default(cuid())
+  productId   String
+  scansCount  Int      @default(0)
+  viewsCount  Int      @default(0)
+  sharesCount Int      @default(0)
+  avgRating   Float?
+  period      String   @default("all_time") // daily, weekly, monthly, all_time
+  lastUpdated DateTime @updatedAt
+
+  @@unique([productId, period])
+  @@index([scansCount])
+  @@index([productId])
+}
+
+// ============================================
+// INTEGRATIONS & APIs
+// ============================================
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String?
+  key         String   @unique
+  name        String
+  permissions Json     // array of allowed endpoints
+  usageCount  Int      @default(0)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([key])
+  @@index([isActive])
+}
+
+model Webhook {
+  id          String   @id @default(cuid())
+  userId      String?
+  url         String
+  events      String[] // which events to receive
+  secret      String   // webhook signing secret
+  isActive    Boolean  @default(true)
+  failureCount Int     @default(0)
+  lastSuccess DateTime?
+  lastFailure DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+// ============================================
+// EXTERNAL INTEGRATIONS
+// ============================================
+
+model HealthKitSync {
+  id              String   @id @default(cuid())
+  userId          String
+  isEnabled       Boolean  @default(false)
+  lastSyncAt      DateTime?
+  syncedDataTypes String[] // nutrition, glucose, activity
+  createdAt       DateTime @default(now())
+
+  @@unique([userId])
+  @@index([userId])
+}

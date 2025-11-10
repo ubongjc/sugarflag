@@ -1,0 +1,209 @@
+{
+  "appStoreMetadata": {
+    "version": "1.0",
+    "appInfo": {
+      "appName": "SugarFlag",
+      "subtitle": "Know Your Sugar, Choose Better",
+      "bundleId": "com.sugarflag.ios",
+      "primaryCategory": "Health & Fitness",
+      "secondaryCategory": "Food & Drink",
+      "contentRights": "2025 SugarFlag. All rights reserved.",
+      "minimumOSVersion": "16.0"
+    },
+    "pricing": {
+      "basePrice": "Free",
+      "priceSchedule": "Free with In-App Purchases",
+      "availableCountries": [
+        "US", "CA", "GB", "AU", "DE", "FR", "ES", "IT", "JP", "KR", "BR", "MX",
+        "NL", "SE", "NO", "DK", "FI", "BE", "AT", "CH", "IE", "NZ", "SG", "HK"
+      ]
+    },
+    "localizations": {
+      "en-US": {
+        "name": "SugarFlag",
+        "subtitle": "Know Your Sugar, Choose Better",
+        "promotionalText": "Scan any food to instantly see added sugars and sweeteners. Get personalized lower-sugar alternatives. Start making better choices today!",
+        "description": "**Know Your Sugar. Choose Better.**\n\nSugarFlag gives you instant, AI-powered analysis of added sugars and sweeteners in any food product. Just scan a barcode or snap a photo of the nutrition label to get a clear 0-100 score with plain-English explanations.\n\n**FEATURES**\n\n📸 **Instant Scanning**\n• Barcode (UPC) scanning for instant product lookup\n• Photo scanning with AI-powered OCR for any nutrition label\n• Encrypted photo processing for your privacy\n\n🎯 **Smart Scoring**\n• Clear 0-100 scores based on added sugars and sweetener quality\n• Plain-English explanations, not complex nutrition jargon\n• Detailed sweetener breakdown with health impact\n\n🛒 **Personalized Recommendations**\n• Weekly cart suggestions with lower-sugar alternatives\n• Tailored to your dietary preferences and restrictions\n• Discover healthier swaps for your favorite products\n\n📊 **Track Your Progress**\n• Complete scan history with scores and insights\n• See your sugar consumption patterns over time\n• Export your data anytime (GDPR compliant)\n\n🔒 **Privacy First**\n• Photos encrypted on-device before transmission (AES-GCM-256)\n• Passkey authentication (WebAuthn) - no passwords to remember\n• Your data, your control - delete anytime\n\n**WHY SUGARFLAG?**\n\nThe average American consumes 77 grams of added sugar daily - nearly 3x the recommended limit. Hidden sugars lurk in \"healthy\" foods like yogurt, granola, and whole wheat bread. Marketing labels like \"natural\" and \"organic\" don't mean low-sugar.\n\nSugarFlag cuts through the confusion. Our AI analyzes nutrition labels and ingredients to identify added sugars, natural sugars, and all types of sweeteners - from high fructose corn syrup to stevia. You get instant clarity on what you're really eating.\n\n**SUBSCRIPTION PLANS**\n\n**Free**\n• 10 scans per month\n• Basic product scores\n• Scan history\n\n**Premium - $2.99/month**\n• Unlimited scans\n• Advanced recommendations\n• Weekly cart suggestions\n• Data export\n• Priority support\n\n**Family - $6.99/month**\n• Up to 5 users\n• All Premium features\n• Shared scan history\n• Priority support\n\n**PERFECT FOR:**\n• Reducing sugar intake\n• Managing diabetes or prediabetes\n• Supporting weight loss goals\n• Making informed grocery choices\n• Understanding food labels\n• Teaching kids about nutrition\n\n**HOW IT WORKS**\n\n1. **Scan:** Point your camera at a barcode or nutrition label\n2. **Analyze:** Get an instant 0-100 score with detailed breakdown\n3. **Swap:** Discover lower-sugar alternatives tailored to your taste\n\n**TECHNOLOGY**\n\n• OpenAI GPT-4 Vision for accurate OCR\n• 700,000+ products from OpenFoodFacts database\n• 28+ sweetener ontology with health scores\n• Advanced recommendation algorithm\n• Secure passkey authentication\n\n**PRIVACY & SECURITY**\n\n• Photos never permanently stored\n• End-to-end encryption for all data\n• CCPA and GDPR compliant\n• No third-party data selling\n• Transparent privacy practices\n\n**SUPPORT**\n\nHave questions? Contact us at support@sugarflag.com\nPrivacy concerns? Email privacy@sugarflag.com\nFeature requests? We'd love to hear from you!\n\n**COMING SOON**\n• Barcode scanning directly in camera view\n• Meal tracking and daily sugar goals\n• Recipe analyzer\n• Restaurant menu scanning\n• Integration with Apple Health\n• Grocery list export to Instacart/Amazon Fresh\n\nDownload SugarFlag today and take control of your sugar intake. Your healthier future starts with one scan.",
+        "keywords": "sugar tracker,nutrition label,barcode scanner,food scanner,health,diabetes,diet,low sugar,sweetener",
+        "releaseNotes": "Version 1.0 - Launch Release\n\nWelcome to SugarFlag! 🍭\n\n• Instant barcode and photo scanning\n• AI-powered nutrition label analysis\n• 0-100 sugar scores with plain-English explanations\n• Personalized lower-sugar recommendations\n• Weekly cart suggestions\n• Complete scan history\n• Privacy-first design with encryption\n• Passkey authentication\n\nStart your journey to healthier eating today!",
+        "marketingUrl": "https://sugarflag.com",
+        "supportUrl": "https://sugarflag.com/support",
+        "privacyPolicyUrl": "https://sugarflag.com/privacy"
+      }
+    },
+    "reviewInformation": {
+      "contact": {
+        "firstName": "SugarFlag",
+        "lastName": "Team",
+        "phone": "+1-555-0100",
+        "email": "reviews@sugarflag.com"
+      },
+      "demoAccount": {
+        "username": "Demo Mode (no login required)",
+        "password": "N/A",
+        "instructions": "Tap 'Demo Mode' on the login screen to access all features without authentication"
+      },
+      "notes": "SugarFlag is a nutrition analysis app focused on sugar content and sweeteners.\n\nTEST ACCOUNT CREDENTIALS:\n• The app uses passkey authentication (WebAuthn)\n• For testing, use the demo mode accessible from the login screen\n• Tap \"Demo Mode\" on the login screen to access full features without authentication\n\nTEST SCENARIOS:\n1. Barcode Scanning: Enter UPC \"012000161551\" (Coca-Cola) for a low score example\n2. Photo Scanning: Use the sample nutrition label image included in the app\n3. Recommendations: View personalized lower-sugar alternatives\n4. Subscription: Test IAP flow (sandbox environment)\n\nTHIRD-PARTY SERVICES:\n• OpenAI GPT-4 Vision API for OCR (photos processed server-side)\n• OpenFoodFacts API for product database (public API)\n• Stripe for payments (PCI compliant)\n\nAPI KEYS:\nAll API keys are configured on our backend server. No client-side keys required.\n\nPRIVACY:\n• Photos are encrypted before transmission\n• Privacy policy: https://sugarflag.com/privacy\n• GDPR/CCPA compliant with data export and deletion\n\nCONTACT:\n• Review contact: reviews@sugarflag.com\n• Phone: +1-555-0100"
+    },
+    "ageRating": {
+      "rating": "12+",
+      "advisories": ["Medical/Treatment Information"],
+      "questionnaire": {
+        "cartoonOrFantasyViolence": "None",
+        "realisticViolence": "None",
+        "sexualContentOrNudity": "None",
+        "profanityOrCrudeHumor": "None",
+        "alcoholTobaccoOrDrugUse": "None",
+        "matureOrSuggestiveThemes": "None",
+        "horrorOrFearThemes": "None",
+        "gambling": "None",
+        "unrestrictedWebAccess": false,
+        "medicalOrTreatmentInfo": "Frequent/Intense"
+      }
+    },
+    "inAppPurchases": [
+      {
+        "productId": "com.sugarflag.premium.monthly",
+        "type": "Auto-Renewable Subscription",
+        "referenceName": "Premium Monthly",
+        "displayName": {
+          "en-US": "Premium Monthly"
+        },
+        "description": {
+          "en-US": "Unlimited scans, advanced recommendations, and weekly cart suggestions"
+        },
+        "price": 2.99,
+        "currency": "USD",
+        "subscriptionDuration": "1 Month",
+        "subscriptionGroup": "SugarFlag Subscriptions",
+        "rank": 1,
+        "freeTrial": {
+          "duration": "7 Days",
+          "eligibility": "New Subscribers"
+        }
+      },
+      {
+        "productId": "com.sugarflag.family.monthly",
+        "type": "Auto-Renewable Subscription",
+        "referenceName": "Family Monthly",
+        "displayName": {
+          "en-US": "Family Monthly"
+        },
+        "description": {
+          "en-US": "Up to 5 users with all Premium features and priority support"
+        },
+        "price": 6.99,
+        "currency": "USD",
+        "subscriptionDuration": "1 Month",
+        "subscriptionGroup": "SugarFlag Subscriptions",
+        "rank": 2,
+        "freeTrial": {
+          "duration": "7 Days",
+          "eligibility": "New Subscribers"
+        }
+      }
+    ],
+    "exportCompliance": {
+      "usesEncryption": true,
+      "isExempt": true,
+      "exemptionReason": "Uses only standard iOS cryptographic APIs (CryptoKit), HTTPS/TLS, and passkey authentication (WebAuthn). Qualifies for self-classification.",
+      "ccatsClassification": "5D992.c"
+    },
+    "appPrivacy": {
+      "privacyPolicyUrl": "https://sugarflag.com/privacy",
+      "dataCollection": [
+        {
+          "dataType": "Contact Info",
+          "dataFields": ["Email Address"],
+          "linkedToUser": true,
+          "usedForTracking": false,
+          "purposes": ["App Functionality", "Product Personalization"]
+        },
+        {
+          "dataType": "Health & Fitness",
+          "dataFields": ["Dietary Information"],
+          "linkedToUser": true,
+          "usedForTracking": false,
+          "purposes": ["App Functionality", "Product Personalization"]
+        },
+        {
+          "dataType": "User Content",
+          "dataFields": ["Photos or Videos"],
+          "linkedToUser": true,
+          "usedForTracking": false,
+          "purposes": ["App Functionality"],
+          "notes": "Photos of nutrition labels are processed by AI and not permanently stored"
+        },
+        {
+          "dataType": "Identifiers",
+          "dataFields": ["User ID"],
+          "linkedToUser": true,
+          "usedForTracking": false,
+          "purposes": ["App Functionality", "Product Personalization"]
+        },
+        {
+          "dataType": "Usage Data",
+          "dataFields": ["Product Interaction"],
+          "linkedToUser": true,
+          "usedForTracking": false,
+          "purposes": ["Analytics", "Product Personalization"]
+        },
+        {
+          "dataType": "Diagnostics",
+          "dataFields": ["Crash Data", "Performance Data"],
+          "linkedToUser": false,
+          "usedForTracking": false,
+          "purposes": ["App Functionality"]
+        }
+      ]
+    },
+    "screenshots": {
+      "iPhone_6_7": {
+        "resolution": "1290x2796",
+        "required": true,
+        "count": 7,
+        "filenames": [
+          "iphone67_01_hero.png",
+          "iphone67_02_scan.png",
+          "iphone67_03_result_high.png",
+          "iphone67_04_result_low.png",
+          "iphone67_05_recommendations.png",
+          "iphone67_06_history.png",
+          "iphone67_07_profile.png"
+        ]
+      },
+      "iPhone_6_5": {
+        "resolution": "1242x2688",
+        "required": true,
+        "count": 7,
+        "filenames": [
+          "iphone65_01_hero.png",
+          "iphone65_02_scan.png",
+          "iphone65_03_result_high.png",
+          "iphone65_04_result_low.png",
+          "iphone65_05_recommendations.png",
+          "iphone65_06_history.png",
+          "iphone65_07_profile.png"
+        ]
+      }
+    },
+    "appIcon": {
+      "sizes": [
+        { "size": "1024x1024", "purpose": "App Store" },
+        { "size": "180x180", "purpose": "iPhone @3x" },
+        { "size": "167x167", "purpose": "iPad Pro @2x" },
+        { "size": "152x152", "purpose": "iPad @2x" },
+        { "size": "120x120", "purpose": "iPhone @2x" },
+        { "size": "87x87", "purpose": "iPhone @3x Settings" },
+        { "size": "80x80", "purpose": "iPad @2x Spotlight" },
+        { "size": "76x76", "purpose": "iPad @1x" },
+        { "size": "60x60", "purpose": "iPhone @2x Spotlight" },
+        { "size": "58x58", "purpose": "iPhone @2x Settings" },
+        { "size": "40x40", "purpose": "iPad @1x Spotlight" },
+        { "size": "29x29", "purpose": "iPad @1x Settings" },
+        { "size": "20x20", "purpose": "iPad @1x Notifications" }
+      ],
+      "designNotes": "Use a candy emoji (🍭) stylized or 'SF' monogram with sugar-related visual. Bright colors (pink/red gradient). Simple and recognizable at small sizes."
+    }
+  }
+}
