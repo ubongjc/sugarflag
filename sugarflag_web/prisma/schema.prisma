@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  scans       Scan[]
+  preferences Preference?
+  carts       CartSuggestion[]
+  feedback    Feedback[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  upc         String   @unique
+  brand       String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Nutrients (per serving)
+  servingSize      String?
+  calories         Float?
+  totalSugars      Float? // grams
+  addedSugars      Float? // grams
+  totalCarbs       Float? // grams
+  protein          Float? // grams
+  fat              Float? // grams
+  sodium           Float? // mg
+  fiber            Float? // grams
+
+  // Ingredients
+  ingredients      String? // comma-separated or JSON
+  ingredientsVector Unsupported("vector(1536)")? // pgvector for embeddings
+
+  // Relations
+  scans       Scan[]
+  aliases     AliasUPC[]
+  sweeteners  ProductSweetener[]
+
+  @@index([upc])
+  @@index([brand])
+}
+
+model Sweetener {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        String   // "added_sugar" | "artificial" | "natural_alternative"
+  aliases     String[] // e.g., ["HFCS", "High Fructose Corn Syrup"]
+  description String?
+  healthScore Int      @default(50) // 0-100, lower = worse
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products ProductSweetener[]
+
+  @@index([type])
+}
+
+model ProductSweetener {
+  id          String   @id @default(cuid())
+  productId   String
+  sweetenerId String
+  position    Int      // position in ingredient list (1-indexed)
+  amount      String?  // if quantifiable
+  createdAt   DateTime @default(now())
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sweetener Sweetener @relation(fields: [sweetenerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, sweetenerId])
+  @@index([productId])
+}
+
+model Scan {
+  id             String   @id @default(cuid())
+  userId         String
+  productId      String?
+  score          Int      // 0-100, higher = better (lower sugar)
+  scanType       String   // "upc" | "photo" | "manual"
+  photoUrl       String?  // encrypted photo if enabled
+  encrypted      Boolean  @default(false)
+  locale         String?  @default("en-US")
+  rationale      String?  // plain-English explanation
+  uncertainty    Float?   // 0-1, confidence level
+  createdAt      DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  feedback Feedback[]
+
+  @@index([userId])
+  @@index([productId])
+  @@index([createdAt])
+}
+
+model Preference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  dislikes          String[] // ingredient/sweetener names to avoid
+  budgetMax         Float?   // weekly grocery budget limit
+  culturalCuisines  String[] // preferred cuisines
+  dietaryRestrictions String[] // "vegan", "gluten-free", etc.
+  tasteProfile      Json?    // structured taste data from feedback
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CartSuggestion {
+  id           String   @id @default(cuid())
+  userId       String
+  weekOf       DateTime // week start date
+  items        Json     // array of {productId, quantity, reason}
+  estSavings   Float?   // estimated sugar savings in grams
+  totalCost    Float?
+  generatedAt  DateTime @default(now())
+  status       String   @default("active") // "active" | "archived"
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([weekOf])
+}
+
+model VendorIntegration {
+  id        String   @id @default(cuid())
+  retailer  String   @unique
+  status    String   @default("inactive") // "active" | "inactive" | "pending"
+  authData  String?  // encrypted auth tokens
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  scanId    String
+  thumbsUp  Boolean
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scanId])
+}
+
+model AliasUPC {
+  id           String   @id @default(cuid())
+  upc          String   @unique
+  canonicalId  String
+  reason       String?  // why this is an alias
+  createdAt    DateTime @default(now())
+
+  canonical Product @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
+
+  @@index([upc])
+  @@index([canonicalId])
+}
+
+model OntologyVersion {
+  id          String   @id @default(cuid())
+  version     String   @unique
+  changelog   String
+  publishedAt DateTime @default(now())
+  active      Boolean  @default(false)
+
+  @@index([active])
+}
