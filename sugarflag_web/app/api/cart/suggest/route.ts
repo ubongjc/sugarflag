@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CartSuggestionResponse } from '@/lib/types'
+import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/cart/suggest
  *
  * Generates a weekly lower-sugar cart suggestion personalized to user preferences
- * Currently returns mock data - will be replaced with real recommendation engine
  */
 export async function GET(request: NextRequest) {
   try {
-    // Auth check (comment out for testing)
-    // const { userId } = auth()
-    // if (!userId) {
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized', message: 'Authentication required' },
-    //     { status: 401 }
-    //   )
-    // }
+    // For MVP, use test user
+    const userId = 'test-user-id'
 
     // Get current week start (Monday)
     const now = new Date()
@@ -26,88 +20,90 @@ export async function GET(request: NextRequest) {
     weekStart.setDate(now.getDate() - daysToMonday)
     weekStart.setHours(0, 0, 0, 0)
 
-    // Mock cart suggestion data
-    const mockSuggestion: CartSuggestionResponse = {
-      id: 'mock-cart-001',
-      weekOf: weekStart.toISOString(),
-      items: [
-        {
-          productId: 'prod-001',
-          upc: '012000161551',
-          name: 'Unsweetened Almond Milk',
-          brand: 'Silk',
-          quantity: 2,
-          price: 3.99,
-          reason: 'Lower-sugar alternative to your usual 2% milk. Saves 24g sugar per serving.',
-          sugarSavings: 48,
-        },
-        {
-          productId: 'prod-002',
-          upc: '070470002075',
-          name: 'Organic Plain Greek Yogurt',
-          brand: 'Fage',
-          quantity: 1,
-          price: 5.49,
-          reason: 'Replace flavored yogurt. Add your own fruit to control sugar.',
-          sugarSavings: 15,
-        },
-        {
-          productId: 'prod-003',
-          upc: '041190468492',
-          name: 'Dark Chocolate 85% Cacao',
-          brand: 'Lindt',
-          quantity: 1,
-          price: 3.29,
-          reason: 'Higher cacao percentage means less sugar than milk chocolate.',
-          sugarSavings: 12,
-        },
-        {
-          productId: 'prod-004',
-          upc: '052603051859',
-          name: 'Steel Cut Oats',
-          brand: 'Quaker',
-          quantity: 1,
-          price: 4.99,
-          reason: 'Replace instant oatmeal packets. No added sugars, customize with fruit.',
-          sugarSavings: 20,
-        },
-        {
-          productId: 'prod-005',
-          upc: '074175434120',
-          name: 'Sparkling Water - Lime',
-          brand: 'LaCroix',
-          quantity: 1,
-          price: 4.99,
-          reason: 'Zero-sugar alternative to soda. Natural flavoring only.',
-          sugarSavings: 39,
-        },
-        {
-          productId: 'prod-006',
-          upc: '085239012598',
-          name: 'Almond Butter',
-          brand: 'Justin\'s',
-          quantity: 1,
-          price: 8.99,
-          reason: 'Better than sweetened peanut butter. Only almonds and salt.',
-          sugarSavings: 8,
-        },
-        {
-          productId: 'prod-007',
-          upc: '041303002230',
-          name: 'Whole Grain Bread',
-          brand: 'Dave\'s Killer Bread',
-          quantity: 1,
-          price: 5.99,
-          reason: 'Lower sugar than many store brands. High in fiber.',
-          sugarSavings: 6,
-        },
-      ],
-      estSavings: 148, // total grams of sugar saved per week
-      totalCost: 37.73,
-      generatedAt: new Date().toISOString(),
+    // Check if we already have a suggestion for this week
+    const existing = await prisma.cartSuggestion.findFirst({
+      where: {
+        userId,
+        weekOf: weekStart,
+        status: 'active',
+      },
+    })
+
+    if (existing) {
+      const response: CartSuggestionResponse = {
+        id: existing.id,
+        weekOf: existing.weekOf.toISOString(),
+        items: existing.items as any[],
+        estSavings: existing.estSavings ?? undefined,
+        totalCost: existing.totalCost ?? undefined,
+        generatedAt: existing.generatedAt.toISOString(),
+      }
+      return NextResponse.json(response)
     }
 
-    return NextResponse.json(mockSuggestion)
+    // Get user preferences
+    const preferences = await prisma.preference.findUnique({
+      where: { userId },
+    })
+
+    // Get low-sugar products from database
+    const lowSugarProducts = await prisma.product.findMany({
+      where: {
+        addedSugars: {
+          lte: 5, // 5g or less added sugar
+        },
+      },
+      include: {
+        sweeteners: {
+          include: {
+            sweetener: true,
+          },
+        },
+      },
+      take: 10,
+      orderBy: {
+        addedSugars: 'asc',
+      },
+    })
+
+    // Build cart items from low-sugar products
+    const items = lowSugarProducts.slice(0, 7).map((product) => ({
+      productId: product.id,
+      upc: product.upc,
+      name: product.name,
+      brand: product.brand,
+      quantity: 1,
+      price: 4.99, // Default price (would come from pricing API)
+      reason: `${product.addedSugars === 0 ? 'No' : 'Low'} added sugars (${product.addedSugars || 0}g). Great alternative!`,
+      sugarSavings: (10 - (product.addedSugars || 0)) * 2, // Estimated weekly savings
+    }))
+
+    // Calculate total savings and cost
+    const estSavings = items.reduce((sum, item) => sum + (item.sugarSavings || 0), 0)
+    const totalCost = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0)
+
+    // Create cart suggestion in database
+    const cartSuggestion = await prisma.cartSuggestion.create({
+      data: {
+        userId,
+        weekOf: weekStart,
+        items: items as any,
+        estSavings,
+        totalCost,
+        status: 'active',
+      },
+    })
+
+    const response: CartSuggestionResponse = {
+      id: cartSuggestion.id,
+      weekOf: cartSuggestion.weekOf.toISOString(),
+      items,
+      estSavings,
+      totalCost,
+      generatedAt: cartSuggestion.generatedAt.toISOString(),
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Cart suggestion error:', error)
 

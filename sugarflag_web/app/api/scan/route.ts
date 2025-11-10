@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { ScanRequestSchema, ScanResponse } from '@/lib/types'
 import { calculateSugarScore } from '@/lib/scoring'
 import { auth } from '@clerk/nextjs'
+import { extractNutritionFromImage } from '@/lib/ocr'
+import { lookupProductByUPC, convertToOurFormat } from '@/lib/openfoodfacts'
+import { detectSweeteners } from '@/lib/sweetener-detector'
 
 /**
  * POST /api/scan
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (validatedData.upc) {
       scanType = 'upc'
 
-      // Look up product by UPC
+      // Look up product in our database first
       product = await prisma.product.findUnique({
         where: { upc: validatedData.upc },
         include: {
@@ -78,11 +81,65 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // If not in our database, try OpenFoodFacts
+      if (!product) {
+        const offProduct = await lookupProductByUPC(validatedData.upc)
+
+        if (offProduct) {
+          const productData = convertToOurFormat(offProduct)
+
+          // Create product in our database
+          product = await prisma.product.create({
+            data: productData,
+            include: {
+              sweeteners: {
+                include: {
+                  sweetener: true,
+                },
+                orderBy: {
+                  position: 'asc',
+                },
+              },
+            },
+          })
+
+          // Detect and link sweeteners
+          if (productData.ingredients) {
+            const detected = await detectSweeteners(productData.ingredients)
+
+            for (const { sweetener, position } of detected) {
+              await prisma.productSweetener.create({
+                data: {
+                  productId: product.id,
+                  sweetenerId: sweetener.id,
+                  position,
+                },
+              })
+            }
+          }
+
+          // Reload product with sweeteners
+          product = await prisma.product.findUnique({
+            where: { id: product.id },
+            include: {
+              sweeteners: {
+                include: {
+                  sweetener: true,
+                },
+                orderBy: {
+                  position: 'asc',
+                },
+              },
+            },
+          })
+        }
+      }
+
       if (!product) {
         return NextResponse.json(
           {
             error: 'Not Found',
-            message: `Product with UPC ${validatedData.upc} not found in database`,
+            message: `Product with UPC ${validatedData.upc} not found`,
             details: { upc: validatedData.upc },
           },
           { status: 404 }
@@ -93,16 +150,65 @@ export async function POST(request: NextRequest) {
     else if (validatedData.photo) {
       scanType = 'photo'
 
-      // TODO: Implement OCR processing
-      // For now, return a stub response
-      return NextResponse.json(
-        {
-          error: 'Not Implemented',
-          message: 'Photo OCR is not yet implemented. Use UPC scanning for now.',
-          details: { feature: 'photo-ocr', status: 'planned' },
+      // Extract nutrition info from photo using OpenAI Vision
+      const ocrResult = await extractNutritionFromImage(validatedData.photo)
+
+      // Create a temporary product from OCR data
+      const productData = {
+        upc: `PHOTO-${Date.now()}`, // Temporary UPC for photo scans
+        brand: 'Unknown Brand',
+        name: 'Scanned Product',
+        ...ocrResult.nutrition,
+      }
+
+      // Create product
+      product = await prisma.product.create({
+        data: productData,
+        include: {
+          sweeteners: {
+            include: {
+              sweetener: true,
+            },
+            orderBy: {
+              position: 'asc',
+            },
+          },
         },
-        { status: 501 }
-      )
+      })
+
+      // Detect sweeteners from ingredients if available
+      if (ocrResult.nutrition.ingredients) {
+        const detected = await detectSweeteners(ocrResult.nutrition.ingredients)
+
+        for (const { sweetener, position } of detected) {
+          await prisma.productSweetener.create({
+            data: {
+              productId: product.id,
+              sweetenerId: sweetener.id,
+              position,
+            },
+          })
+        }
+      }
+
+      // Reload product with sweeteners
+      product = await prisma.product.findUnique({
+        where: { id: product.id },
+        include: {
+          sweeteners: {
+            include: {
+              sweetener: true,
+            },
+            orderBy: {
+              position: 'asc',
+            },
+          },
+        },
+      })
+
+      if (!product) {
+        throw new Error('Failed to create product from OCR data')
+      }
     } else {
       return NextResponse.json(
         {
