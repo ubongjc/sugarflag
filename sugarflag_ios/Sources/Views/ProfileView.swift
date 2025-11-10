@@ -72,7 +72,7 @@ struct ProfileView: View {
                 // Subscription
                 Section("Subscription") {
                     NavigationLink {
-                        Text("Manage Subscription")
+                        SubscriptionView()
                     } label: {
                         HStack {
                             Label("Premium", systemImage: "star.fill")

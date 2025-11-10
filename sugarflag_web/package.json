@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:products": "tsx prisma/seed-products.ts",
-    "db:seed:all": "npm run db:seed && npm run db:seed:products"
+    "db:seed:extended": "tsx prisma/seed-products-extended.ts",
+    "db:seed:all": "npm run db:seed && npm run db:seed:extended"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -39,7 +40,11 @@
     "@radix-ui/react-slot": "^1.1.0",
     "tailwindcss-animate": "^1.0.7",
     "openai": "^4.73.0",
-    "axios": "^1.7.9"
+    "axios": "^1.7.9",
+    "posthog-js": "^1.190.0",
+    "posthog-node": "^4.3.0",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-tabs": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^22",
